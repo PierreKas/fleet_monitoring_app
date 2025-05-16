@@ -1,3 +1,5 @@
+import 'package:fleet_monitoring_app/screens/car_details.dart';
+import 'package:fleet_monitoring_app/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,7 +14,7 @@ class RoutingConfig {
           GoRoute(
             path: 'car-details',
             builder: (BuildContext context, GoRouterState state) {
-              return const CreateAnnouncement();
+              return const CarDetails();
             },
           ),
         ])
