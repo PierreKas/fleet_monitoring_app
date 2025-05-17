@@ -12,9 +12,12 @@ class RoutingConfiguration {
         },
         routes: <RouteBase>[
           GoRoute(
-            path: 'car-details',
+            path: 'car-details/:carId',
             builder: (BuildContext context, GoRouterState state) {
-              return const CarDetails();
+              String? carId = state.pathParameters['carId'];
+              return CarDetails(
+                cardId: carId!,
+              );
             },
           ),
         ])

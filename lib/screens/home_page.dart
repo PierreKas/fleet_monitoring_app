@@ -17,28 +17,34 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Car> _carsList = [];
+  Set<Marker> _markers = {};
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
-    // target: LatLng(, 30.1127),
-    zoom: 11.5,
+    zoom: 13,
   );
-  late GoogleMapController _googleMapController;
+
   @override
   void dispose() {
-    _googleMapController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _fetchCars();
     customMarkerIcon();
   }
 
   Future<void> _fetchCars() async {
-    _carsList = await CarController().getCars();
+    try {
+      final cars = await CarController().getCars();
+      setState(() {
+        _carsList = cars;
+        _createMarkers();
+      });
+    } catch (e) {
+      throw Exception('Error is $e');
+    }
   }
 
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
@@ -56,22 +62,29 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _createMarkers() {
+    _markers = _carsList.map((car) {
+      return Marker(
+          markerId: MarkerId(car.id),
+          position: LatLng(car.latitude, car.longitude),
+          infoWindow: InfoWindow(
+            title: car.name,
+          ),
+          icon: markerIcon,
+          onTap: () {
+            context.go('/car-details/${car.id}');
+          });
+    }).toSet();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
         GoogleMap(
-          // myLocationButtonEnabled: true,
-          zoomControlsEnabled: true,
+          myLocationButtonEnabled: false,
           initialCameraPosition: _initialCameraPosition,
-          markers: {
-            Marker(
-              markerId: MarkerId("Car"),
-              position: LatLng(-1.9577, 30.1127),
-              draggable: true,
-              icon: markerIcon,
-            )
-          },
+          markers: _markers,
         ),
         Column(
           children: [
@@ -86,11 +99,6 @@ class _HomePageState extends State<HomePage> {
               height: 15,
             ),
             const FilterButtons(),
-            ElevatedButton.icon(
-                onPressed: () {
-                  context.go('/car-details');
-                },
-                label: const Icon(Icons.add))
           ],
         )
       ]),

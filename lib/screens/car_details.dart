@@ -1,15 +1,55 @@
+import 'package:fleet_monitoring_app/controller/car_controller.dart';
+import 'package:fleet_monitoring_app/model/car.dart';
 import 'package:fleet_monitoring_app/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CarDetails extends StatefulWidget {
-  const CarDetails({super.key});
+  final String cardId;
+  const CarDetails({
+    super.key,
+    required this.cardId,
+  });
 
   @override
   State<CarDetails> createState() => _CarDetailsState();
 }
 
 class _CarDetailsState extends State<CarDetails> {
+  Car? _car;
+  BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
+
+  @override
+  void initState() {
+    customMarkerIcon();
+    _fetchCarById();
+    super.initState();
+  }
+
+  Future<void> _fetchCarById() async {
+    try {
+      final car = await CarController().getCarById(widget.cardId);
+      setState(() {
+        _car = car;
+      });
+    } catch (e) {
+      throw Exception('Error is $e');
+    }
+  }
+
+  void customMarkerIcon() {
+    BitmapDescriptor.fromAssetImage(
+            const ImageConfiguration(
+              size: Size(60, 60),
+            ),
+            "assets/icons/car1.png")
+        .then((icon) {
+      setState(() {
+        markerIcon = icon;
+      });
+    });
+  }
+
   Widget _buildDetails(
       {required String title,
       required IconData icon,
@@ -47,18 +87,20 @@ class _CarDetailsState extends State<CarDetails> {
     );
   }
 
-  static const _initialCameraPosition = CameraPosition(
-    target: LatLng(-1.9577, 30.1127),
-    zoom: 11.5,
-  );
+  // static final _initialCameraPosition = CameraPosition(
+  //   // target: LatLng(-1.9577, 30.1127),
+  //   target: LatLng(_car!.latitude, _car!.longitude),
+  //   zoom: 13,
+  // );
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyColors.white,
       appBar: AppBar(
-        title: const Text(
-          'Car X',
-          style: TextStyle(
+        backgroundColor: MyColors.skyBlue,
+        title: Text(
+          _car!.name,
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -68,21 +110,23 @@ class _CarDetailsState extends State<CarDetails> {
         padding: const EdgeInsets.all(10.0),
         child: Column(
           children: [
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(
                       Icons.circle,
-                      color: MyColors.green,
+                      color: _car!.status == "Moving"
+                          ? MyColors.green
+                          : MyColors.grey,
                     ),
-                    Text('Status'),
+                    Text(_car!.status),
                   ],
                 ),
-                const Text(
-                  'ID:',
-                  style: TextStyle(color: MyColors.grey),
+                Text(
+                  'ID: ${widget.cardId}',
+                  style: const TextStyle(color: MyColors.grey),
                 ),
               ],
             ),
@@ -94,7 +138,7 @@ class _CarDetailsState extends State<CarDetails> {
                 _buildDetails(
                   icon: Icons.speed,
                   title: 'Speed',
-                  value1: '25km/h',
+                  value1: '${_car!.speed.toString()} Km/h',
                   hasValue2: false,
                 ),
                 const SizedBox(
@@ -103,20 +147,34 @@ class _CarDetailsState extends State<CarDetails> {
                 _buildDetails(
                   icon: Icons.location_on,
                   title: 'Location',
-                  value1: '-1.8394',
+                  value1: _car!.latitude.toString(),
                   hasValue2: true,
-                  value2: '45.566',
+                  value2: _car!.longitude.toString(),
                 ),
               ],
             ),
             const SizedBox(
               height: 10,
             ),
-            const SizedBox(
+            SizedBox(
                 height: 500,
                 width: 500,
-                child: const GoogleMap(
-                    initialCameraPosition: _initialCameraPosition))
+                child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      // target: LatLng(-1.9577, 30.1127),
+                      target: LatLng(_car!.latitude, _car!.longitude),
+                      zoom: 13,
+                    ),
+                    markers: {
+                      Marker(
+                        markerId: MarkerId(widget.cardId),
+                        position: LatLng(_car!.latitude, _car!.longitude),
+                        infoWindow: InfoWindow(
+                          title: _car!.name,
+                        ),
+                        icon: markerIcon,
+                      ),
+                    }))
           ],
         ),
       ),
