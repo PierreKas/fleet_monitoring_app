@@ -6,6 +6,12 @@ class CarController {
   List<Car> _carsList = [];
   Future<List<Car>> getCars() async {
     _carsList = await _apiService.fetchCars();
+    print(_carsList.map(
+      (e) => e.latitude,
+    ));
+    print(_carsList.map(
+      (e) => e.longitude,
+    ));
     return _carsList;
   }
 }
