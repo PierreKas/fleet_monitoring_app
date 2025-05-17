@@ -1,0 +1,46 @@
+import 'package:fleet_monitoring_app/utils/colors.dart';
+import 'package:flutter/material.dart';
+
+class MySearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String)? onChanged;
+  const MySearchBar({
+    super.key,
+    required this.controller,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      onChanged: onChanged,
+      controller: controller,
+      cursorColor: MyColors.black,
+      enabled: true,
+      obscureText: false,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: MyColors.white,
+        hintText: 'Search cars by name or ID',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+            borderSide: const BorderSide(
+              color: MyColors.black,
+            )),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: const BorderSide(
+            color: MyColors.grey,
+          ),
+        ),
+        prefixIcon: Icon(
+          Icons.search,
+          color: MyColors.black.withOpacity(0.8),
+        ),
+      ),
+    );
+  }
+}

@@ -3,7 +3,7 @@ import 'package:fleet_monitoring_app/screens/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class RoutingConfig {
+class RoutingConfiguration {
   GoRouter router = GoRouter(routes: <RouteBase>[
     GoRoute(
         path: '/',
