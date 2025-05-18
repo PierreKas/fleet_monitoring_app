@@ -17,7 +17,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Car> _carsList = [];
+  List<Car> _filteredCarsList = [];
   Set<Marker> _markers = {};
+
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
     zoom: 13,
@@ -25,6 +27,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -40,11 +43,49 @@ class _HomePageState extends State<HomePage> {
       final cars = await CarController().getCars();
       setState(() {
         _carsList = cars;
+        _filteredCarsList = _carsList;
         _createMarkers();
       });
     } catch (e) {
       throw Exception('Error is $e');
     }
+  }
+
+  void filterCars(String query) {
+    final filtered = _carsList.where((car) {
+      final carName = car.name.toLowerCase();
+      final input = query.toLowerCase();
+      return carName.contains(input);
+    }).toList();
+
+    setState(() {
+      _filteredCarsList = filtered;
+      _createMarkers();
+    });
+  }
+
+  void filterMovingCars() {
+    final filtered = _carsList.where((car) {
+      final movingCars = car.status.toLowerCase() == 'moving';
+      return movingCars;
+    }).toList();
+
+    setState(() {
+      _filteredCarsList = filtered;
+      _createMarkers();
+    });
+  }
+
+  void filterParkedCars() {
+    final filtered = _carsList.where((car) {
+      final parkedCars = car.status.toLowerCase() == 'parked';
+      return parkedCars;
+    }).toList();
+
+    setState(() {
+      _filteredCarsList = filtered;
+      _createMarkers();
+    });
   }
 
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
@@ -63,12 +104,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _createMarkers() {
-    _markers = _carsList.map((car) {
+    _markers = _filteredCarsList.map((car) {
       return Marker(
           markerId: MarkerId(car.id),
           position: LatLng(car.latitude, car.longitude),
           infoWindow: InfoWindow(
             title: car.name,
+            onTap: () {
+              //  context.go('/car-details/${car.id}');
+            },
           ),
           icon: markerIcon,
           onTap: () {
@@ -92,13 +136,23 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(top: 20.0, left: 20, right: 20),
               child: MySearchBar(
                 controller: _searchController,
-                onChanged: (p0) {},
+                onChanged: filterCars,
               ),
             ),
             const SizedBox(
               height: 15,
             ),
-            const FilterButtons(),
+            FilterButtons(
+              onFilterChanged: (index) {
+                if (index == 1) {
+                  filterMovingCars();
+                } else if (index == 2) {
+                  filterParkedCars();
+                } else {
+                  _fetchCars();
+                }
+              },
+            ),
           ],
         )
       ]),

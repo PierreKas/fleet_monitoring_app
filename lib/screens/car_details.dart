@@ -17,6 +17,7 @@ class CarDetails extends StatefulWidget {
 
 class _CarDetailsState extends State<CarDetails> {
   Car? _car;
+  bool _isLoading = false;
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
 
   @override
@@ -28,11 +29,15 @@ class _CarDetailsState extends State<CarDetails> {
 
   Future<void> _fetchCarById() async {
     try {
+      _isLoading = true;
+
       final car = await CarController().getCarById(widget.cardId);
       setState(() {
         _car = car;
+        _isLoading = false;
       });
     } catch (e) {
+      _isLoading = false;
       throw Exception('Error is $e');
     }
   }
@@ -99,85 +104,94 @@ class _CarDetailsState extends State<CarDetails> {
       appBar: AppBar(
         backgroundColor: MyColors.skyBlue,
         title: Text(
-          _car!.name,
+          _car?.name ?? 'Car details',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      color: _car!.status == "Moving"
-                          ? MyColors.green
-                          : MyColors.grey,
-                    ),
-                    Text(_car!.status),
-                  ],
-                ),
-                Text(
-                  'ID: ${widget.cardId}',
-                  style: const TextStyle(color: MyColors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            Row(
-              children: [
-                _buildDetails(
-                  icon: Icons.speed,
-                  title: 'Speed',
-                  value1: '${_car!.speed.toString()} Km/h',
-                  hasValue2: false,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                _buildDetails(
-                  icon: Icons.location_on,
-                  title: 'Location',
-                  value1: _car!.latitude.toString(),
-                  hasValue2: true,
-                  value2: _car!.longitude.toString(),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            SizedBox(
-                height: 500,
-                width: 500,
-                child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      // target: LatLng(-1.9577, 30.1127),
-                      target: LatLng(_car!.latitude, _car!.longitude),
-                      zoom: 13,
-                    ),
-                    markers: {
-                      Marker(
-                        markerId: MarkerId(widget.cardId),
-                        position: LatLng(_car!.latitude, _car!.longitude),
-                        infoWindow: InfoWindow(
-                          title: _car!.name,
-                        ),
-                        icon: markerIcon,
+      body: _isLoading
+          ? const Center(
+              child: Text(
+              'Fetching data...',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ))
+          : Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.circle,
+                            color: _car!.status == "Moving"
+                                ? MyColors.green
+                                : MyColors.grey,
+                          ),
+                          Text(_car!.status),
+                        ],
                       ),
-                    }))
-          ],
-        ),
-      ),
+                      Text(
+                        'ID: ${widget.cardId}',
+                        style: const TextStyle(color: MyColors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    children: [
+                      _buildDetails(
+                        icon: Icons.speed,
+                        title: 'Speed',
+                        value1: '${_car!.speed.toString()} Km/h',
+                        hasValue2: false,
+                      ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                      _buildDetails(
+                        icon: Icons.location_on,
+                        title: 'Location',
+                        value1: _car!.latitude.toString(),
+                        hasValue2: true,
+                        value2: _car!.longitude.toString(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Expanded(
+                      // height: 500,
+                      // width: 500,
+                      child: GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            // target: LatLng(-1.9577, 30.1127),
+                            target: LatLng(_car!.latitude, _car!.longitude),
+                            zoom: 13,
+                          ),
+                          markers: {
+                        Marker(
+                          markerId: MarkerId(widget.cardId),
+                          position: LatLng(_car!.latitude, _car!.longitude),
+                          infoWindow: InfoWindow(
+                            title: _car!.name,
+                          ),
+                          icon: markerIcon,
+                        ),
+                      }))
+                ],
+              ),
+            ),
     );
   }
 }

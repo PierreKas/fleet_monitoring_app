@@ -2,7 +2,8 @@ import 'package:fleet_monitoring_app/utils/colors.dart';
 import 'package:flutter/material.dart';
 
 class FilterButtons extends StatefulWidget {
-  const FilterButtons({super.key});
+  final void Function(int) onFilterChanged;
+  const FilterButtons({super.key, required this.onFilterChanged});
 
   @override
   State<FilterButtons> createState() => _FilterButtonsState();
@@ -29,7 +30,6 @@ class _FilterButtonsState extends State<FilterButtons> {
 
     return Center(
         child: ToggleButtons(
-      //mouseCursor: SystemMouseCursors.click,
       selectedColor: MyColors.grey,
       color: MyColors.black,
       fillColor: MyColors.white,
@@ -42,6 +42,7 @@ class _FilterButtonsState extends State<FilterButtons> {
       onPressed: (int index) {
         setState(() {
           selectedIndex = index;
+          widget.onFilterChanged(index);
         });
       },
     ));

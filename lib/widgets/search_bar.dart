@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 class MySearchBar extends StatelessWidget {
   final TextEditingController controller;
   final Function(String)? onChanged;
+  final Function()? onClear;
   const MySearchBar({
     super.key,
     required this.controller,
     required this.onChanged,
+    this.onClear,
   });
 
   @override
@@ -40,6 +42,13 @@ class MySearchBar extends StatelessWidget {
           Icons.search,
           color: MyColors.black.withOpacity(0.8),
         ),
+        // suffixIcon: controller.text.isNotEmpty
+        //     ? IconButton(
+        //         color: MyColors.grey,
+        //         icon: const Icon(Icons.clear),
+        //         onPressed: onClear,
+        //       )
+        //     : null,
       ),
     );
   }
