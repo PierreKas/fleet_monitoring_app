@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> {
   List<Car> _carsList = [];
   List<Car> _filteredCarsList = [];
   Set<Marker> _markers = {};
-
+  // StreamSubscription<List<Car>>? _carsStreamSubscription;
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
     zoom: 13,
@@ -89,7 +89,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   void customMarkerIcon() {
     BitmapDescriptor.fromAssetImage(
             const ImageConfiguration(

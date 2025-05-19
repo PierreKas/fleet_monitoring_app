@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fleet_monitoring_app/model/car.dart';
 import 'package:fleet_monitoring_app/service/api_service.dart';
 
@@ -26,4 +28,26 @@ class CarController {
       throw Exception('Error in controller $e');
     }
   }
+
+  // StreamController<double> streamController = StreamController<double>();
+
+  void generateNum() {
+    int num = 5;
+    for (var i = 1; i > 0; i++) {
+      Future.delayed(Duration(seconds: i), () {
+        //num = num + i;
+        num += i;
+        print(num);
+      });
+    }
+  }
+
+  // void main() {
+  //   Timer(const Duration(seconds: 5), generateNum);
+  // }
+
+  // final myStream = generateNum().stream;
+  // final subscription = myStream.listen(
+  //   (data) => print('Data: $data'),
+  // );
 }
