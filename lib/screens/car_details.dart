@@ -5,6 +5,7 @@ import 'package:fleet_monitoring_app/model/car.dart';
 import 'package:fleet_monitoring_app/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:provider/provider.dart';
 
 class CarDetails extends StatefulWidget {
   final String cardId;
@@ -50,9 +51,9 @@ class _CarDetailsState extends State<CarDetails> {
 
         _isLoading = false;
       });
-      if (_car!.status.toLowerCase().contains('moving')) {
-        _startCarUpdate();
-      }
+      // if (_car!.status.toLowerCase().contains('moving')) {
+      _startCarUpdate();
+      // }
     } catch (e) {
       _isLoading = false;
       throw Exception('Error is $e');
@@ -62,12 +63,21 @@ class _CarDetailsState extends State<CarDetails> {
   void _startCarUpdate() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      setState(() {
-        _car!.latitude += 0.0005;
-        _car!.longitude -= 0.005;
+      if (_car != null) {
+        if (_car!.status.toLowerCase().contains('moving')) {
+          _car!.latitude += 0.0005;
+          _car!.longitude -= 0.005;
+        }
         _streamController.add(_car!.latitude);
         _streamController.add(_car!.longitude);
-      });
+        // setState(() {
+        //   _car!.latitude += 0.0005;
+        //   _car!.longitude -= 0.005;
+        //   _streamController.add(_car!.latitude);
+        //   _streamController.add(_car!.longitude);
+        // });
+        Provider.of<CarController>(context, listen: false).updateCar(_car!);
+      }
     });
   }
 
@@ -124,25 +134,35 @@ class _CarDetailsState extends State<CarDetails> {
   }
 
   Widget _buildMap() {
-    return GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: LatLng(_car!.latitude, _car!.longitude),
-          zoom: 13,
-        ),
-        markers: {
-          Marker(
-            markerId: MarkerId(widget.cardId),
-            position: LatLng(_car!.latitude, _car!.longitude),
-            infoWindow: InfoWindow(
-              title: _car!.name,
-            ),
-            icon: markerIcon,
+    return Consumer<CarController>(
+      builder: (context, ccar, _) {
+        return GoogleMap(
+          initialCameraPosition: CameraPosition(
+            // target: LatLng(_car!.latitude, _car!.longitude),
+            target: LatLng(ccar.car.latitude, ccar.car.longitude),
+            zoom: 13,
           ),
-        });
+          markers: {
+            Marker(
+              markerId: MarkerId(widget.cardId),
+              position: LatLng(
+                  ccar.car.latitude,
+                  ccar.car
+                      .longitude), //LatLng(_car!.latitude, _car!.longitude),
+              infoWindow: InfoWindow(
+                title: ccar.car.name, //_car!.name,
+              ),
+              icon: markerIcon,
+            ),
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // final ccar=context.watch<CarController>();
     return Scaffold(
       backgroundColor: MyColors.white,
       appBar: AppBar(
@@ -208,35 +228,47 @@ class _CarDetailsState extends State<CarDetails> {
                         const SizedBox(
                           width: 10,
                         ),
-                        StreamBuilder<double>(
-                          stream: _stream,
-                          builder: (context, snapshot) {
-                            if (_car!.status.toLowerCase().contains('moving')) {
-                              if (snapshot.hasData) {
-                                return _buildDetails(
-                                  icon: Icons.location_on,
-                                  title: 'Location',
-                                  value1: _car!.latitude.toStringAsFixed(5),
-                                  hasValue2: true,
-                                  value2: _car!.longitude.toStringAsFixed(5),
+                        Consumer<CarController>(
+                          builder: (context, car, _) {
+                            return StreamBuilder<double>(
+                                stream: _stream,
+                                builder: (context, snapshot) {
+                                  // if (_car!.status
+                                  //     .toLowerCase()
+                                  //     .contains('moving')) {
+                                  if (snapshot.hasData) {
+                                    return _buildDetails(
+                                        icon: Icons.location_on,
+                                        title: 'Location',
+                                        value1: car.car.latitude.toStringAsFixed(
+                                            5), // _car!.latitude.toStringAsFixed(5),
+                                        hasValue2: true,
+                                        value2:
+                                            car.car.longitude.toStringAsFixed(5)
+                                        // _car!.longitude.toStringAsFixed(5),
+                                        );
+                                  } else {
+                                    return _buildDetails(
+                                      icon: Icons.location_on,
+                                      title: 'Location',
+                                      value1: 'Searching coordinates...',
+                                      hasValue2: false,
+                                    );
+                                  }
+                                }
+                                // else {
+                                //   return _buildDetails(
+                                //     icon: Icons.location_on,
+                                //     title: 'Location',
+                                //     value1: car.car.latitude.toStringAsFixed(
+                                //         5), //_car!.latitude.toStringAsFixed(5),
+                                //     hasValue2: true,
+                                //     value2: car.car.longitude.toStringAsFixed(
+                                //         5), // _car!.longitude.toStringAsFixed(5),
+                                //   );
+                                // }
+                                //  },
                                 );
-                              } else {
-                                return _buildDetails(
-                                  icon: Icons.location_on,
-                                  title: 'Location',
-                                  value1: 'Searching coordinates...',
-                                  hasValue2: false,
-                                );
-                              }
-                            } else {
-                              return _buildDetails(
-                                icon: Icons.location_on,
-                                title: 'Location',
-                                value1: _car!.latitude.toStringAsFixed(5),
-                                hasValue2: true,
-                                value2: _car!.longitude.toStringAsFixed(5),
-                              );
-                            }
                           },
                         ),
                       ],
@@ -247,9 +279,9 @@ class _CarDetailsState extends State<CarDetails> {
                   ),
                   Expanded(
                     child: StreamBuilder<Object>(
-                      stream: _stream,
-                      builder: (context, snapshot) {
-                        if (_car!.status.toLowerCase().contains('moving')) {
+                        stream: _stream,
+                        builder: (context, snapshot) {
+                          // if (_car!.status.toLowerCase().contains('moving')) {
                           if (snapshot.hasData) {
                             return _buildMap();
                           } else {
@@ -262,11 +294,12 @@ class _CarDetailsState extends State<CarDetails> {
                               ),
                             ));
                           }
-                        } else {
-                          return _buildMap();
                         }
-                      },
-                    ),
+                        // else {
+                        //   return _buildMap();
+                        // }
+                        //},
+                        ),
                   ),
                 ],
               ),
