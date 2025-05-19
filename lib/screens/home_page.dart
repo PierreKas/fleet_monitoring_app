@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:fleet_monitoring_app/controller/car_controller.dart';
 import 'package:fleet_monitoring_app/model/car.dart';
+import 'package:fleet_monitoring_app/utils/colors.dart';
 import 'package:fleet_monitoring_app/widgets/filter_buttons.dart';
 import 'package:fleet_monitoring_app/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,10 @@ class _HomePageState extends State<HomePage> {
   List<Car> _filteredCarsList = [];
   Set<Marker> _markers = {};
   // StreamSubscription<List<Car>>? _carsStreamSubscription;
+  final StreamController<List<Car>> _streamController =
+      StreamController<List<Car>>();
+  late Stream<List<Car>> _stream;
+  Timer? _timer;
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
     zoom: 13,
@@ -28,14 +33,38 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _streamController.close();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   void initState() {
-    super.initState();
     _fetchCars();
     customMarkerIcon();
+    _stream = _streamController.stream.asBroadcastStream();
+    super.initState();
+  }
+
+  void _startCarUpdate() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      for (var car in _carsList) {
+        if (car.status.toLowerCase().contains('moving')) {
+          if (int.tryParse(car.id)! <= 5) {
+            car.latitude += 0.0005;
+            car.longitude -= 0.0005;
+          } else {
+            car.latitude -= 0.0005;
+            car.longitude += 0.0005;
+          }
+        }
+      }
+      setState(() {
+        _createMarkers();
+        _streamController.add(_carsList);
+      });
+    });
   }
 
   Future<void> _fetchCars() async {
@@ -46,6 +75,7 @@ class _HomePageState extends State<HomePage> {
         _filteredCarsList = _carsList;
         _createMarkers();
       });
+      _startCarUpdate();
     } catch (e) {
       throw Exception('Error is $e');
     }
@@ -124,12 +154,28 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: MyColors.white,
       body: Stack(children: [
-        GoogleMap(
-          myLocationButtonEnabled: false,
-          initialCameraPosition: _initialCameraPosition,
-          markers: _markers,
-        ),
+        StreamBuilder<List<Car>>(
+            stream: _stream,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return GoogleMap(
+                  myLocationButtonEnabled: false,
+                  initialCameraPosition: _initialCameraPosition,
+                  markers: _markers,
+                );
+              } else {
+                return const Center(
+                    child: Text(
+                  "Fetching data...",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ));
+              }
+            }),
         Column(
           children: [
             Padding(

@@ -21,7 +21,7 @@ class _CarDetailsState extends State<CarDetails> {
   Car? _car;
   bool _isLoading = false;
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
-  StreamController<double> _streamController = StreamController<double>();
+  final StreamController<double> _streamController = StreamController<double>();
   late Stream<double> _stream;
   Timer? _timer;
   @override
@@ -61,7 +61,7 @@ class _CarDetailsState extends State<CarDetails> {
 
   void _startCarUpdate() {
     _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       setState(() {
         _car!.latitude += 0.0005;
         _car!.longitude -= 0.005;
@@ -73,11 +73,11 @@ class _CarDetailsState extends State<CarDetails> {
 
   void customMarkerIcon() {
     BitmapDescriptor.fromAssetImage(
-            const ImageConfiguration(
-              size: Size(60, 60),
-            ),
-            "assets/icons/car1.png")
-        .then((icon) {
+      const ImageConfiguration(
+        size: Size(60, 60),
+      ),
+      "assets/icons/car1.png",
+    ).then((icon) {
       setState(() {
         markerIcon = icon;
       });
