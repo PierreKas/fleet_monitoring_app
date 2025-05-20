@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fleet_monitoring_app/controller/car_controller.dart';
 import 'package:fleet_monitoring_app/model/car.dart';
 import 'package:fleet_monitoring_app/utils/colors.dart';
+import 'package:fleet_monitoring_app/widgets/tracking_button.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -21,23 +22,27 @@ class CarDetails extends StatefulWidget {
 class _CarDetailsState extends State<CarDetails> {
   Car? _car;
   bool _isLoading = false;
+  bool _isTracking = false;
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
-  final StreamController<double> _streamController = StreamController<double>();
-  late Stream<double> _stream;
-  Timer? _timer;
+  late double lastLatitude;
+  late double lastLongitude;
+  StreamSubscription? _trackingSubscription;
+  GoogleMapController? _googleMapController;
   @override
   void initState() {
-    _stream = _streamController.stream.asBroadcastStream();
     customMarkerIcon();
-    _fetchCarById();
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchCarById();
+    });
+    // _fetchCarById();
+    // Provider.of<CarController>(context, listen: false).initPrefs();
     super.initState();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _streamController.close();
+    _stopTracking();
+    _googleMapController?.dispose();
     super.dispose();
   }
 
@@ -45,40 +50,19 @@ class _CarDetailsState extends State<CarDetails> {
     try {
       _isLoading = true;
 
-      final car = await CarController().getCarById(widget.cardId);
+      _car = await Provider.of<CarController>(context, listen: false)
+          .getCarById(widget.cardId);
+      lastLatitude = _car!.latitude;
+      lastLongitude = _car!.longitude;
+      // print(
+      //     'Coordinates on details page are latidude: ${_car!.latitude} , longiude: ${_car!.longitude}');
       setState(() {
-        _car = car;
-
         _isLoading = false;
       });
-      // if (_car!.status.toLowerCase().contains('moving')) {
-      _startCarUpdate();
-      // }
     } catch (e) {
       _isLoading = false;
       throw Exception('Error is $e');
     }
-  }
-
-  void _startCarUpdate() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (_car != null) {
-        if (_car!.status.toLowerCase().contains('moving')) {
-          _car!.latitude += 0.0005;
-          _car!.longitude -= 0.005;
-        }
-        _streamController.add(_car!.latitude);
-        _streamController.add(_car!.longitude);
-        // setState(() {
-        //   _car!.latitude += 0.0005;
-        //   _car!.longitude -= 0.005;
-        //   _streamController.add(_car!.latitude);
-        //   _streamController.add(_car!.longitude);
-        // });
-        Provider.of<CarController>(context, listen: false).updateCar(_car!);
-      }
-    });
   }
 
   void customMarkerIcon() {
@@ -92,6 +76,52 @@ class _CarDetailsState extends State<CarDetails> {
         markerIcon = icon;
       });
     });
+  }
+
+  void _startTracking() {
+    if (_trackingSubscription != null) {
+      return;
+    }
+
+    final carController = Provider.of<CarController>(context, listen: false);
+
+    _trackingSubscription =
+        Stream.periodic(const Duration(seconds: 5)).listen((_) async {
+      try {
+        if (_isTracking) {
+          setState(() {
+            lastLatitude = carController.car!.latitude;
+            lastLongitude = carController.car!.longitude;
+          });
+          _googleMapController?.animateCamera(
+            CameraUpdate.newLatLng(LatLng(lastLatitude, lastLongitude)),
+          );
+        }
+      } catch (e) {
+        throw Exception('Error tracking car location');
+      }
+    });
+
+    setState(() {
+      _isTracking = true;
+    });
+  }
+
+  void _stopTracking() {
+    _trackingSubscription?.cancel();
+    _trackingSubscription = null;
+
+    if (mounted) {
+      _isTracking = false;
+    }
+  }
+
+  void _toggleTracking() {
+    if (_isTracking) {
+      _stopTracking();
+    } else {
+      _startTracking();
+    }
   }
 
   Widget _buildDetails(
@@ -115,7 +145,7 @@ class _CarDetailsState extends State<CarDetails> {
               Text(
                 value1,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -135,25 +165,33 @@ class _CarDetailsState extends State<CarDetails> {
 
   Widget _buildMap() {
     return Consumer<CarController>(
-      builder: (context, ccar, _) {
+      builder: (context, myCar, child) {
+        _car = myCar.car;
         return GoogleMap(
           initialCameraPosition: CameraPosition(
-            // target: LatLng(_car!.latitude, _car!.longitude),
-            target: LatLng(ccar.car.latitude, ccar.car.longitude),
+            // target: LatLng(-1.9577, 30.1127),
+            target: LatLng(_car!.latitude, _car!.longitude),
             zoom: 13,
           ),
           markers: {
             Marker(
               markerId: MarkerId(widget.cardId),
               position: LatLng(
-                  ccar.car.latitude,
-                  ccar.car
-                      .longitude), //LatLng(_car!.latitude, _car!.longitude),
+                _isTracking ? _car!.latitude : lastLatitude,
+                _isTracking ? _car!.longitude : lastLongitude,
+              ),
               infoWindow: InfoWindow(
-                title: ccar.car.name, //_car!.name,
+                title: _car!.name,
               ),
               icon: markerIcon,
+              onTap: () {
+                print(
+                    'Coordinates on details page are latidude: ${_car!.latitude} , longiude: ${_car!.longitude}');
+              },
             ),
+          },
+          onMapCreated: (controller) {
+            _googleMapController = controller;
           },
         );
       },
@@ -162,7 +200,6 @@ class _CarDetailsState extends State<CarDetails> {
 
   @override
   Widget build(BuildContext context) {
-    // final ccar=context.watch<CarController>();
     return Scaffold(
       backgroundColor: MyColors.white,
       appBar: AppBar(
@@ -184,126 +221,98 @@ class _CarDetailsState extends State<CarDetails> {
                 fontWeight: FontWeight.bold,
               ),
             ))
-          : Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
+          : _car == null
+              ? const Center(
+                  child: Text(
+                  'Car not found.',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ))
+              : Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              Icons.circle,
-                              color: _car!.status == "Moving"
-                                  ? MyColors.green
-                                  : MyColors.grey,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.circle,
+                                  color: _car!.status == "Moving"
+                                      ? MyColors.green
+                                      : MyColors.grey,
+                                ),
+                                Text(_car!.status),
+                              ],
                             ),
-                            Text(_car!.status),
+                            Text(
+                              'ID: ${widget.cardId}',
+                              style: const TextStyle(color: MyColors.grey),
+                            ),
                           ],
                         ),
-                        Text(
-                          'ID: ${widget.cardId}',
-                          style: const TextStyle(color: MyColors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildDetails(
-                          icon: Icons.speed,
-                          title: 'Speed',
-                          value1: '${_car!.speed.toString()} Km/h',
-                          hasValue2: false,
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Consumer<CarController>(
-                          builder: (context, car, _) {
-                            return StreamBuilder<double>(
-                                stream: _stream,
-                                builder: (context, snapshot) {
-                                  // if (_car!.status
-                                  //     .toLowerCase()
-                                  //     .contains('moving')) {
-                                  if (snapshot.hasData) {
-                                    return _buildDetails(
-                                        icon: Icons.location_on,
-                                        title: 'Location',
-                                        value1: car.car.latitude.toStringAsFixed(
-                                            5), // _car!.latitude.toStringAsFixed(5),
-                                        hasValue2: true,
-                                        value2:
-                                            car.car.longitude.toStringAsFixed(5)
-                                        // _car!.longitude.toStringAsFixed(5),
-                                        );
-                                  } else {
-                                    return _buildDetails(
-                                      icon: Icons.location_on,
-                                      title: 'Location',
-                                      value1: 'Searching coordinates...',
-                                      hasValue2: false,
-                                    );
-                                  }
-                                }
-                                // else {
-                                //   return _buildDetails(
-                                //     icon: Icons.location_on,
-                                //     title: 'Location',
-                                //     value1: car.car.latitude.toStringAsFixed(
-                                //         5), //_car!.latitude.toStringAsFixed(5),
-                                //     hasValue2: true,
-                                //     value2: car.car.longitude.toStringAsFixed(
-                                //         5), // _car!.longitude.toStringAsFixed(5),
-                                //   );
-                                // }
-                                //  },
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _buildDetails(
+                              icon: Icons.speed,
+                              title: 'Speed',
+                              value1: '${_car!.speed.toString()} Km/h',
+                              hasValue2: false,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Consumer<CarController>(
+                              builder: (context, car, _) {
+                                return _buildDetails(
+                                  icon: Icons.location_on,
+                                  title: 'last location',
+                                  value1: _isTracking
+                                      ? car.car!.latitude.toStringAsFixed(5)
+                                      : lastLatitude.toStringAsFixed(5),
+                                  hasValue2: true,
+                                  value2: _isTracking
+                                      ? car.car!.longitude.toStringAsFixed(5)
+                                      : lastLongitude.toStringAsFixed(5),
                                 );
-                          },
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      TrackingButton(
+                        onPressed: () {
+                          _toggleTracking();
+                          print(_isTracking);
+                        },
+                        isTracking: _isTracking,
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Expanded(
+                        child: _buildMap(),
+                      ),
+                    ],
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Expanded(
-                    child: StreamBuilder<Object>(
-                        stream: _stream,
-                        builder: (context, snapshot) {
-                          // if (_car!.status.toLowerCase().contains('moving')) {
-                          if (snapshot.hasData) {
-                            return _buildMap();
-                          } else {
-                            return const Center(
-                                child: Text(
-                              'Searching coordinates...',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ));
-                          }
-                        }
-                        // else {
-                        //   return _buildMap();
-                        // }
-                        //},
-                        ),
-                  ),
-                ],
-              ),
-            ),
+                ),
     );
   }
 }
+
+void _stopTracking() {}
