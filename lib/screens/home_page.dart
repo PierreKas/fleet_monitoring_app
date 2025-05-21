@@ -25,6 +25,8 @@ class _HomePageState extends State<HomePage> {
       StreamController<List<Car>>();
   late Stream<List<Car>> _stream;
   Timer? _timer;
+  // bool _isLoading = true;
+  // String? _errorMessage;
 
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
     _fetchCars();
     customMarkerIcon();
     _stream = _streamController.stream.asBroadcastStream();
+    Provider.of<CarController>(context, listen: false).initPrefs();
     super.initState();
   }
 
@@ -72,13 +75,25 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchCars() async {
     try {
-      _carsList =
-          await Provider.of<CarController>(context, listen: false).getCars();
+      // setState(() {
+      //   _isLoading = true;
+      //   _errorMessage = null;
+      // });
+      _carsList = (await Provider.of<CarController>(context, listen: false)
+              .getCars()) ??
+          [];
       _filteredCarsList = _carsList;
       _createMarkers();
       _startCarUpdate();
     } catch (e) {
+      // setState(() {
+      //   _errorMessage = e.toString();
+      // });
       throw Exception('Error is $e');
+    } finally {
+      // setState(() {
+      //   _isLoading = false;
+      // });
     }
   }
 
@@ -161,6 +176,19 @@ class _HomePageState extends State<HomePage> {
             StreamBuilder<List<Car>>(
                 stream: _stream,
                 builder: (context, snapshot) {
+                  // if (_isLoading) {
+                  //   return const Center(
+                  //       child: Text(
+                  //     "Fetching data...",
+                  //     style: TextStyle(
+                  //       fontSize: 20,
+                  //       fontWeight: FontWeight.bold,
+                  //     ),
+                  //   ));
+                  // } else if (_errorMessage != null &&
+                  //     (snapshot.data == null || snapshot.data!.isEmpty)) {
+                  //   return Center(child: Text(_errorMessage!));
+                  // }
                   if (snapshot.hasData) {
                     return GoogleMap(
                       myLocationButtonEnabled: false,

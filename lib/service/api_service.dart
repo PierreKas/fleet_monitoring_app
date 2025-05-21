@@ -16,23 +16,11 @@ class ApiService {
       } else {
         throw Exception('Failed to load cars data: ${response.statusCode}');
       }
+    } on http.ClientException {
+      throw Exception('Network error: Unable to connect to server');
     } catch (e) {
-      throw Exception('Error fetching cars data: $e');
-    }
-  }
-
-  Future<Car> fetchCarById(String id) async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/$id'));
-
-      if (response.statusCode == 200) {
-        final dynamic jsonData = json.decode(response.body);
-        return Car.fromJson(jsonData);
-      } else {
-        throw Exception('Failed to load car data: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching car data: $e');
+      throw Exception(
+          'Connection error: Please check your internet connection');
     }
   }
 }

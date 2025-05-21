@@ -88,7 +88,7 @@ class _CarDetailsState extends State<CarDetails> {
     _trackingSubscription =
         Stream.periodic(const Duration(seconds: 5)).listen((_) async {
       try {
-        if (_isTracking) {
+        if (mounted && _isTracking) {
           setState(() {
             lastLatitude = carController.car!.latitude;
             lastLongitude = carController.car!.longitude;
@@ -110,7 +110,7 @@ class _CarDetailsState extends State<CarDetails> {
   void _stopTracking() {
     _trackingSubscription?.cancel();
     _trackingSubscription = null;
-
+    setState(() {});
     if (mounted) {
       _isTracking = false;
     }
@@ -184,10 +184,6 @@ class _CarDetailsState extends State<CarDetails> {
                 title: _car!.name,
               ),
               icon: markerIcon,
-              onTap: () {
-                print(
-                    'Coordinates on details page are latidude: ${_car!.latitude} , longiude: ${_car!.longitude}');
-              },
             ),
           },
           onMapCreated: (controller) {
@@ -298,7 +294,6 @@ class _CarDetailsState extends State<CarDetails> {
                       TrackingButton(
                         onPressed: () {
                           _toggleTracking();
-                          print(_isTracking);
                         },
                         isTracking: _isTracking,
                       ),
@@ -314,5 +309,3 @@ class _CarDetailsState extends State<CarDetails> {
     );
   }
 }
-
-void _stopTracking() {}
