@@ -12,9 +12,19 @@ A real-time fleet monitoring application built with Flutter that allows users to
 - **Offline Support**: Caches vehicle data for offline viewing
 - **Error Handling**: Displays appropriate messages when network errors occur
 
-## Screenshots
+## Screenshots & Demo
 
+### Main Screens
+<div align="center">
+  <img src="assets/icons/car1.png" alt="Map View" width="250"/>
+  <img src="assets/icons/car2.png" alt="Vehicle Details" width="250"/>
+  <img src="assets/icons/car1.png" alt="Search and Filter" width="250"/>
+</div>
 
+### Feature Demo
+<div align="center">
+  <img src="assets/demo/video-demo.gif" alt="Real-time Tracking Demo" width="300"/>
+</div>
 
 ## How to Run
 
