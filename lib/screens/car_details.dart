@@ -34,8 +34,7 @@ class _CarDetailsState extends State<CarDetails> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchCarById();
     });
-    // _fetchCarById();
-    // Provider.of<CarController>(context, listen: false).initPrefs();
+    Provider.of<CarController>(context, listen: false).initPrefs();
     super.initState();
   }
 
@@ -54,8 +53,6 @@ class _CarDetailsState extends State<CarDetails> {
           .getCarById(widget.cardId);
       lastLatitude = _car!.latitude;
       lastLongitude = _car!.longitude;
-      // print(
-      //     'Coordinates on details page are latidude: ${_car!.latitude} , longiude: ${_car!.longitude}');
       setState(() {
         _isLoading = false;
       });
@@ -66,7 +63,7 @@ class _CarDetailsState extends State<CarDetails> {
   }
 
   void customMarkerIcon() {
-    BitmapDescriptor.fromAssetImage(
+    BitmapDescriptor.asset(
       const ImageConfiguration(
         size: Size(60, 60),
       ),

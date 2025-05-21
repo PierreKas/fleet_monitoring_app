@@ -42,13 +42,6 @@ class MySearchBar extends StatelessWidget {
           Icons.search,
           color: MyColors.black.withOpacity(0.8),
         ),
-        // suffixIcon: controller.text.isNotEmpty
-        //     ? IconButton(
-        //         color: MyColors.grey,
-        //         icon: const Icon(Icons.clear),
-        //         onPressed: onClear,
-        //       )
-        //     : null,
       ),
     );
   }

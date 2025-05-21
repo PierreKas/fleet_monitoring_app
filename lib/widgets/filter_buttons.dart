@@ -7,14 +7,12 @@ class FilterButtons extends StatefulWidget {
 
   @override
   State<FilterButtons> createState() => _FilterButtonsState();
-  // _FilterButtonsState createState() => _FilterButtonsState();
 }
 
 Widget _buttonText(String text) {
   return Text(
     text,
     style: const TextStyle(
-      //color: MyColors.black,
       fontWeight: FontWeight.bold,
     ),
   );

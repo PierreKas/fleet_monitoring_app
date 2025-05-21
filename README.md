@@ -16,9 +16,10 @@ A real-time fleet monitoring application built with Flutter that allows users to
 
 ### Main Screens
 <div align="center">
-  <img src="assets/icons/car1.png" alt="Map View" width="250"/>
-  <img src="assets/icons/car2.png" alt="Vehicle Details" width="250"/>
-  <img src="assets/icons/car1.png" alt="Search and Filter" width="250"/>
+ <img src="assets/demo/app-shotcut.jpeg" alt="Shot-Cut Icon" width="250"/>
+  <img src="assets/demo/home-with-all-cars.jpeg" alt="Home Screen with all cars" width="250"/>
+  <img src="assets/demo/home-with-filterd-cars.jpeg" alt="Home Screen with filtered cars" width="250"/>
+  <img src="assets/demo/car-details.jpeg" alt="Car details Screen" width="250"/>
 </div>
 
 ### Feature Demo

@@ -4,6 +4,7 @@ import 'package:fleet_monitoring_app/controller/car_controller.dart';
 import 'package:fleet_monitoring_app/model/car.dart';
 import 'package:fleet_monitoring_app/utils/colors.dart';
 import 'package:fleet_monitoring_app/widgets/filter_buttons.dart';
+import 'package:fleet_monitoring_app/widgets/my_snackbar.dart';
 import 'package:fleet_monitoring_app/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -25,12 +26,12 @@ class _HomePageState extends State<HomePage> {
       StreamController<List<Car>>();
   late Stream<List<Car>> _stream;
   Timer? _timer;
-  // bool _isLoading = true;
-  // String? _errorMessage;
+
+  String? _errorMessage;
 
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
-    zoom: 20, //13,
+    zoom: 11.5,
   );
 
   @override
@@ -75,10 +76,9 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchCars() async {
     try {
-      // setState(() {
-      //   _isLoading = true;
-      //   _errorMessage = null;
-      // });
+      setState(() {
+        _errorMessage = null;
+      });
       _carsList = (await Provider.of<CarController>(context, listen: false)
               .getCars()) ??
           [];
@@ -86,15 +86,14 @@ class _HomePageState extends State<HomePage> {
       _createMarkers();
       _startCarUpdate();
     } catch (e) {
-      // setState(() {
-      //   _errorMessage = e.toString();
-      // });
+      setState(() {
+        _errorMessage = e.toString();
+      });
+      if (!mounted) {
+        MySnackBar.showErrorMessage(_errorMessage!, context);
+      }
       throw Exception('Error is $e');
-    } finally {
-      // setState(() {
-      //   _isLoading = false;
-      // });
-    }
+    } finally {}
   }
 
   void filterCars(String query) {
@@ -137,7 +136,7 @@ class _HomePageState extends State<HomePage> {
   BitmapDescriptor markerIcon = BitmapDescriptor.defaultMarker;
   final TextEditingController _searchController = TextEditingController();
   void customMarkerIcon() {
-    BitmapDescriptor.fromAssetImage(
+    BitmapDescriptor.asset(
             const ImageConfiguration(
               size: Size(50, 50),
             ),
@@ -160,8 +159,6 @@ class _HomePageState extends State<HomePage> {
           icon: markerIcon,
           onTap: () {
             context.go('/car-details/${car.id}');
-
-            print('latidude: ${car.latitude} , longiude: ${car.longitude}');
           });
     }).toSet();
   }
@@ -176,19 +173,6 @@ class _HomePageState extends State<HomePage> {
             StreamBuilder<List<Car>>(
                 stream: _stream,
                 builder: (context, snapshot) {
-                  // if (_isLoading) {
-                  //   return const Center(
-                  //       child: Text(
-                  //     "Fetching data...",
-                  //     style: TextStyle(
-                  //       fontSize: 20,
-                  //       fontWeight: FontWeight.bold,
-                  //     ),
-                  //   ));
-                  // } else if (_errorMessage != null &&
-                  //     (snapshot.data == null || snapshot.data!.isEmpty)) {
-                  //   return Center(child: Text(_errorMessage!));
-                  // }
                   if (snapshot.hasData) {
                     return GoogleMap(
                       myLocationButtonEnabled: false,
