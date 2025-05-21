@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
 
   static const _initialCameraPosition = CameraPosition(
     target: LatLng(-1.9577, 30.1127),
-    zoom: 13,
+    zoom: 20, //13,
   );
 
   @override
